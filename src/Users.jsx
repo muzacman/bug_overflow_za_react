@@ -2,7 +2,10 @@
 
 import React from 'react';
 
+const apiURL = 'http://localhost:3000';
+
 function UserForm({ user, updateUser, formMode, submitCallback, cancelCallback}) {
+
     let cancelClicked = (event) => {
         event.preventDefault();
         cancelCallback();
@@ -106,16 +109,29 @@ function UserList({users, onEditClicked, onDeleteClicked}) {
 
 function Users() {
     let [userList, setUserList] = React.useState([
-        {id: 1, fname: "Sam", lname: "Iam", email: "sam@aol.com", thumbnail: "pic.jpg"},
-        {id: 2, fname: "Jane", lname: "Doe", email: "jane@aol.com", thumbnail: ""},
-        {id: 3, fname: "Fred", lname: "Bear", email: "fred@aol.com", thumbnail: ""},
-        {id: 4, fname: "Ted", lname: "Tooy", email: "ted@aol.com", thumbnail: "myPic.png"},
-    ]);
+        {id: 1, fname: "Hasn't", lname: "Loaded Yet", email: "", thumbnail: ""}
+        ]);
 
     let [formMode, setFormMode] = React.useState("new");
 
     let emptyUser = {fname: '', lname: '', email: '', thumbnail: ''};
     let [currentUser, setCurrentUser] = React.useState(emptyUser);
+
+    let fetchUsers = () => {
+        fetch(apiURL + "/users").then(response => {
+            console.log("Look what I got: ");
+            console.log(response);
+
+            return response.json();
+        }).then(data => {
+            console.log("And the JSON");
+            console.log(data);
+
+            setUserList(data);
+        });
+    };
+
+    React.useEffect(() => fetchUsers(), []);
 
     let updateUser = (field, value) => {
         let newUser = { ...currentUser };
@@ -123,10 +139,36 @@ function Users() {
         setCurrentUser(newUser);
     };
 
+    let postNewUser = (user) => {
+        const options = {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json;charset=UTF-8'
+            },
+            body: JSON.stringify(user)
+        };
+        console.log("Attempting to post new user");
+        console.log(user);
+        console.log(options.body);
+        // eslint-disable-next-line no-template-curly-in-string
+        return fetch(apiURL + '/users', options).then(response => {
+            return response.json();
+        });
+    };
+
     let formSubmitted = () => {
         if (formMode === "new") {
-            currentUser.id = Math.max(...userList.map((item) => item.id)) +1;
-            setUserList([...userList, currentUser]);
+            postNewUser(currentUser).then(data => {
+                console.log("Received data");
+                console.log(data);
+                if (!data.message) {
+                    currentUser.id = data.id;
+                    setUserList([...userList, currentUser]);
+                } else {
+                    console.log("New user wasn't created because" + data.message);
+                }
+            });
         } else {
             let newUserList = [...userList];
             let userIndex = userList.findIndex((user) => user.id === currentUser.id );
