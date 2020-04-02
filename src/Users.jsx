@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-const apiURL = 'http://localhost:3000';
+const apiURL = 'http://localhost:3006';
 
 function UserForm({ user, updateUser, formMode, submitCallback, cancelCallback}) {
 
